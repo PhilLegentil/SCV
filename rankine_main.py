@@ -5,7 +5,7 @@ from rankine_fct import *
 import win32com.client
 import matplotlib.pyplot as plt
 import numpy as np
-import td_fonctions as td
+import math_util as mut
 import pandas as pd
 
 print('Calcul...')
@@ -21,9 +21,9 @@ m_dot = np.linspace(inf, sup, n_pts)
 W_net, rendement = travail(m_dot, data)
 print('Traitement')
 
-p_opt = td.point_optimal(m_dot, rendement, inf, sup)
-rend_opt = td.fonction_poly(m_dot, rendement, p_opt)
-W_net_opt = td.fonction_poly(m_dot, W_net, p_opt)
+p_opt = mut.point_optimal(m_dot, rendement, inf, sup)
+rend_opt = mut.fonction_poly(m_dot, rendement, p_opt)
+W_net_opt = mut.fonction_poly(m_dot, W_net, p_opt)
 
 titre_sim = f'{data["noms"][0]}'
 
@@ -48,7 +48,7 @@ workbook = ExcelApp.Workbooks.Open(r"interface.xlsm")
 sheet = workbook.Worksheets(2)
 sheet.Range("B13").Value = round(W_net_opt/1000, 4)
 sheet.Range("B14").Value = round(p_opt, 2)
-sheet.Range("B15").Value = round(rend_opt,4)
+sheet.Range("B15").Value = round(rend_opt, 4)
 
 
 figa_cell = sheet.Range("H14")
