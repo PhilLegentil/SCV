@@ -27,22 +27,34 @@ def fig_7(PD):
 
 def fig_8(TFR, PD):
     coef = np.array([[-21.8085, 21.8085], [0.573908, -0.573908]])
-    x = np.array([TFR])
-    y = np.full((1, len(TFR)), PD)
-    perte = mut.biv_poly(x, y, coef)
 
-    return perte[0] / 100
+    if isinstance(TFR, float):
+        x = TFR
+        y = PD
+        perte = mut.biv_poly(x, y, coef)
+        return perte/100
+    else:
+        x = np.array([TFR])
+        y = np.full((1, len(TFR)), PD)
+        perte = mut.biv_poly(x, y, coef)
+        return perte[0] / 100
 
 
 def fig_9(p_in, p_out, TFR):
     coef = np.array([[-60.75, 66.85, 29.75, -35.85],
                      [17.5, -20.02, -0.525, 3.045]])
     r = p_in / p_out
-    x = np.array([TFR])
-    y = np.full((1, len(TFR)), np.log(r))
-    perte = mut.biv_poly(x, y, coef)
 
-    return perte[0] / 100
+    if isinstance(TFR, float):
+        x = TFR
+        y = np.log(r)
+        perte = mut.biv_poly(x, y, coef)
+        return perte/100
+    else:
+        x = np.array([TFR])
+        y = np.full((1, len(TFR)), np.log(r))
+        perte = mut.biv_poly(x, y, coef)
+        return perte[0] / 100
 
 
 def fig_14(p_in, h_in):
@@ -128,7 +140,7 @@ def turbine_3600_HP(mdot_design, mdot_in, gv_stage, h_in, p_in, p_out, pitch_dia
     return eta
 
 
-def turbine_3600_int(m_dot, p_in, p_out, h_in):
+def turbine_3600_int(h_in, p_in, p_out, m_dot):
     r = p_in / p_out
     A = 90.799 + 0.7474 * (np.log(r - 0.3)) - 0.5454 / (np.log(r - 0.3))
     B = -505000 + 77568 * (np.log(r + 0.8)) - 1262500 / (np.log(r + 0.8))

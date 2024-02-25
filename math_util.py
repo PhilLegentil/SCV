@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 
 
 def biv_poly(x, y, c):
-
     somme = 0
     for j in range(c.shape[0]):
         for i in range(c.shape[1]):
@@ -36,11 +35,6 @@ def point_optimal(x, y, low, high):
     return racine(coef_der, low, high)
 
 
-def fonction_poly(x, y, x_0):
-    coef = np.polyfit(x, y, 4)
-    return np.polyval(coef, x_0)
-
-
 def graphique(x, y, titre, titrex, titrey):
     plt.figure(dpi=300)
     plt.plot(x, y)
@@ -48,3 +42,28 @@ def graphique(x, y, titre, titrex, titrey):
     plt.ylabel(titrey)
     plt.title(titre)
     plt.show()
+
+
+def frac_mdot_sout(fractions, index):
+
+    if index not in range(0, len(fractions)):
+        return None
+    else:
+        produit = fractions[index]
+        for i in range(0, index):
+            # print(f'{produit} x (1 - {fractions[i]})')
+            produit = produit*(1-fractions[i])
+        return produit
+
+
+def frac_mdot_turbine(fractions, index):
+    """attention a l'index """
+    produit = 1
+    if index not in range(0, len(fractions)):
+        return None
+    else:
+        for i in range(0, index + 1):
+            # print(f'{produit} x (1 - {fractions[i]})')
+            produit = produit*(1-fractions[i])
+
+        return produit
