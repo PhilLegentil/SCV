@@ -109,7 +109,7 @@ def table_3(l_aube, pitch_dia, p_out, m_dot):
                         ]).T
     f = sp.interpolate.RectBivariateSpline(x, y, valeurs)
 
-    return f(l_aube, V_an)[0] * 2.326
+    return f(l_aube, V_an)[0] * 2.326  # kj/kg
 
 
 def turbine_3600_HP(mdot_design, mdot_in, gv_stage, h_in, p_in, p_out, pitch_dia):

@@ -1,9 +1,11 @@
 import pyromat as pm
 import numpy as np
+import matplotlib.pyplot as plt
 
 import math_util
 import turbine
 
+pm.config['warning_verbose'] = False
 pm.config['unit_pressure'] = 'kPa'
 pm.config['unit_energy'] = 'kJ'
 H2O = pm.get("mp.H2O")
@@ -163,67 +165,69 @@ def travail(mdot, data):
     pitch_dia_last = data['turbine'][5]
 
     sout_hp = 0.15
-    sout_lp = 0.1
 
     """attention a lindex pour les etages de turbine"""
 
     n_etage_int = 2
 
-    beta = [0.2, 0.3]
+    beta = [0.15, 0.2, 0.2]
     resurchauffe = [0, 600]
-    P_out = [6000, 1000]
+    P_out = [6000, 3000, 1000]
 
-    for j, debit in enumerate(mdot):
+    Wdot_int = np.zeros(np.size(mdot))
+    h_out = np.zeros((n_etage_int + 2, np.size(mdot)))
+    q_resurchauffe = np.zeros((n_etage_int, np.size(mdot)))
 
-        q_resurchauffe = np.zeros(n_etage_int)
-        w_int = np.zeros(n_etage_int)
-        h_out = np.zeros(n_etage_int + 2)
+    rend_hp = turbine.turbine_3600_HP(m_dot_design, mdot, gv_stage, h_2, p_2, P_out[0], pitch_dia)
+    """verif graphique rendement pour chaque etage vs. graph h_out"""
+    w_t_hp, h_out[0] = travail_turbine(h_2, s_2, P_out[0], rend_hp)
+    w_t_hp = w_t_hp*mdot
 
-        rend_hp = turbine.turbine_3600_HP(m_dot_design, debit, gv_stage, h_2, p_2, P_out[0], pitch_dia)
-        w_t_hp, h_out[0] = travail_turbine(h_2, s_2, P_out[0], rend_hp)
-        w_t_hp = w_t_hp*sout_hp*debit
+    for i in range(0, n_etage_int):
+        frac = math_util.frac_mdot_turbine(beta, i)
+        debit_in = frac*mdot
 
-        for i in range(0, n_etage_int):
-            debit_in = math_util.frac_mdot_turbine(beta, i)*(1-sout_hp)*debit
+        if resurchauffe[i] == 0:
+            h_in = h_out[i]
+            P_in = P_out[i]
+            """PM warn dans H2O.v de la fonction"""
+            rend = turbine.turbine_3600_int(h_in, P_in, P_out[i+1], debit_in)
 
-            if resurchauffe[i] == 0:
-                h_in = h_out[i]
-                P_in = P_out[i]
-                """valeur de H fucked vecteur?"""
-                rend = turbine.turbine_3600_int(h_in, P_in, P_out[i+1], debit_in)
-            else:
-                h_res_in = h_out[i]*0.8  # pertes de chaleur
-                P_in = P_out[i]*0.95
-                h_in = H2O.h(T=resurchauffe[i], p=P_in)
-                q_resurchauffe[i] = debit_in*(h_in - h_res_in)
-                rend = turbine.turbine_3600_reheat(h_in, P_in, debit_in)
+        else:
+            h_res_in = h_out[i]*0.95  # pertes de chaleur
+            P_in = P_out[i]*0.95
+            h_in = H2O.h(T=resurchauffe[i], p=P_in)
+            q_resurchauffe[i] = debit_in*(h_in - h_res_in)
+            rend = turbine.turbine_3600_reheat(h_in, P_in, debit_in)
 
-            s_in = H2O.s(p=P_in, h=h_in)
+        """PM warning"""
+        s_in = H2O.s(p=P_in, h=h_in)
 
-            w_int[i], h_out[i+1] = travail_turbine(h_in,s_in, P_out[i], rend)
-            w_int[i] = w_int[i]*debit_in
+        w_int, h_out[i+1] = travail_turbine(h_in,s_in, P_out[i+1], rend)
+        Wdot_int += w_int*debit_in
 
-        debit_lp = math_util.frac_mdot_turbine(beta, n_etage_int-1)*(1-sout_hp)*debit
-        rend_lp = turbine.turbine_3600_reheat(h_4, p_4, debit_lp)
+    debit_lp = math_util.frac_mdot_turbine(beta, n_etage_int)*(1-sout_hp)*mdot
+    rend_lp = turbine.turbine_3600_reheat(h_out[-2], P_out[-1], debit_lp)
 
-        w_t_lp, h_5 = travail_turbine(h_4, s_4, p_5, rend_lp)
+    s_lp = H2O.s(h=h_out[-2], p=P_out[-1])
+    w_t_lp, h_lp_out = travail_turbine(h_out[-2], s_lp, p_5, rend_lp)
 
-        pertes_lp = turbine.table_3(l_aube_last, pitch_dia_last, p_5, debit_lp)
+    pertes_lp = turbine.table_3(l_aube_last, pitch_dia_last, p_5, debit_lp)
 
-        w_t_lp = (w_t_lp - pertes_lp)*debit_lp
+    w_t_lp = (w_t_lp - pertes_lp)*debit_lp
 
-        ############## rechauffe
-        w_p_lp = travail_pompe(p_5, p_3)*debit/rend_p
+    ############## rechauffe
+    w_p_lp = travail_pompe(p_5, p_3)*mdot/rend_p
 
-        w_p_hp = travail_pompe(p_3, p_1)*debit/rend_p
+    w_p_hp = travail_pompe(p_3, p_1)*mdot/rend_p
 
-        puissance_mec = w_t_hp + sum(w_int) + w_t_lp - pertes_lp - w_p_lp - w_p_hp
+    puissance_mec = w_t_hp + Wdot_int + w_t_lp - w_p_lp - w_p_hp
 
-        puissance_elec[j] = puissance_mec*rend_alt
+    puissance_elec = puissance_mec*rend_alt
 
-        Q_in = debit*(h_2 - H2O.h(p=p_1, x=0)) + sum(q_resurchauffe)  # juste condenseur
+    Q_in = mdot*(h_2 - H2O.h(p=p_1, x=0)) + sum(q_resurchauffe)  # juste condenseur
 
-        rendement[j] = puissance_elec[j] / Q_in
+    rendement = puissance_elec / Q_in
 
     print('----')
 
