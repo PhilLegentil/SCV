@@ -8,7 +8,7 @@ import numpy as np
 import math_util as mut
 import pandas as pd
 
-print('Calcul...')
+print('Lecture des donnees')
 file_path = "interface.xlsm"
 data = pd.read_excel(file_path, header=0)
 
@@ -51,7 +51,7 @@ sheet.Range("B14").Value = round(p_opt, 2)
 sheet.Range("B15").Value = round(rend_opt, 4)
 
 
-figa_cell = sheet.Range("H14")
+figa_cell = sheet.Range("A17")
 
 figa = sheet.Pictures().Insert(path_figa+'.png')
 figa.Left = figa_cell.Left
