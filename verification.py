@@ -6,6 +6,7 @@ deb_turb = mut.frac_mdot_turbine(fractions, 2)
 deb_sout = 0
 for i in range(0, len(fractions)):
     deb_sout += mut.frac_mdot_sout(fractions, i)
+    print('deb', deb_sout)
 if deb_sout + deb_turb == 1:
     print('valide')
 else:

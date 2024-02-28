@@ -15,8 +15,7 @@ def racine(coef, xg, xd):
     fxd = np.polyval(coef, xd)
 
     if fxg*fxd >= 0:
-        print('pas de zero dans cet interval')
-        r = []
+        r = 'pas de zero dans cet interval'
     else:
         r = (xg+xd)/2
         while abs(xg-xd)/2 > 1e-5:
@@ -32,7 +31,8 @@ def racine(coef, xg, xd):
 def point_optimal(x, y, low, high):
     der = np.gradient(y, x, edge_order=2)
     coef_der = np.polyfit(x, der, 4)
-    return racine(coef_der, low, high)
+    point = racine(coef_der, low, high)
+    return point
 
 
 def graphique(x, y, titre, titrex, titrey):

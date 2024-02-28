@@ -135,10 +135,6 @@ def chaleur_chaud(h_p_i, alpha, m_dot, w_p_hp, h_2, h_4, h_3, rend_chaud):
 
 def travail(mdot, data):
 
-    rend_p = data['valeur'][1]  # rendement isentropique des pompes
-    rend_alt = data['valeur'][2]  # rendement de l'alternateur
-    rend_chaud = data['valeur'][3]  # rendement de la chaudiere
-
     # data turbine HP
     m_dot_design = data['turbine'][0]
     pitch_dia = data['turbine'][1]
@@ -224,7 +220,7 @@ def travail(mdot, data):
     # plt.show()
 
     s_lp = H2O.s(h=h_out[-2], p=P_out[-1])
-    w_t_lp, h_lp_out = travail_turbine(h_out[-2], s_lp, p_lp_out, rend_lp)
+    w_t_lp, h_out[-1] = travail_turbine(h_out[-2], s_lp, p_lp_out, rend_lp)
 
     pertes_lp = turbine.table_3(l_aube_last, pitch_dia_last, p_lp_out, debit_lp)
 
@@ -234,7 +230,81 @@ def travail(mdot, data):
     # plt.title('w_t / pertes')
     # plt.show()
 
-    ############## rechauffe
+    p_cond = p_lp_out
+    n_sout = len(beta)
+    h_sout_out = H2O.h(x=0, p=p_lp_out)
+
+    # verifier que la temp de rejet de leau est plus basse que la temp dentree du sout
+    t_sout_out = H2O.T(h=h_sout_out, p=p_cond)
+
+    mdot_riviere = data['riviere'][0]
+    t_riviere_in = data['riviere'][1]
+    t_riviere_out = data['riviere'][2]
+
+    perte_vap = data['centrale'][0]
+    rend_p = data['centrale'][1]  # rendement isentropique des pompes
+    rend_alt = data['centrale'][2]  # rendement de l'alternateur
+    rend_chaud = data['centrale'][3]  # rendement de la chaudiere
+
+    if t_riviere_out > t_sout_out:
+        t_riviere_out = t_sout_out
+
+    p_amb = 101.25
+    h_riviere_in = H2O.h(T=t_riviere_in, p=p_amb)
+    h_riviere_out = H2O.h(T=t_riviere_out, p=p_amb)
+
+    frac_sout_out = 0
+    for i in range(0, n_sout):
+        frac_sout_out += math_util.frac_mdot_sout(beta, i)
+
+    rechauffe_in = frac_sout_out*h_sout_out
+    turbine_out = frac_lp*h_out[-1]
+    q_out_riviere = mdot_riviere*(h_riviere_out - h_riviere_in)
+    h_cond_out = rechauffe_in + turbine_out - q_out_riviere/mdot
+
+    for i, h in enumerate(h_cond_out):
+        if h <= 0:
+            h_cond_out[i] = 1
+
+    titre_cond_out = np.array(H2O.x(h=h_cond_out, p=p_cond))
+
+    # verfification de letat de la vapeur
+    index_mdot = len(mdot) - 1
+    for i, x in enumerate(titre_cond_out):
+
+        if x == -1:
+            h_cond_out[i] = H2O.h(x=0, p=p_cond)
+
+            titre_cond_out[i] = 0
+        if x == 1.:
+            if i <= index_mdot:
+                # TODO message d'erreur pour non condensation
+                index_mdot = i  # quand la vapeur n'est pas condense on considere que le mdot est hors requis
+            else:
+                pass
+        else:
+            pass
+
+    alpha = np.copy(titre_cond_out)
+    h_p_in = (1-perte_vap*alpha)*H2O.h(x=0, p=p_cond) + H2O.v(x=0, p=p_cond)*(p_amb - p_cond) + alpha*perte_vap*H2O.h(T=t_riviere_in, p = p_amb)
+    h_rech_in = h_p_in + H2O.v(h=h_p_in, p=p_amb)*(P_out[0] - p_amb)
+
+    eau_alim = alpha*perte_vap*mdot
+
+    #  chaleur qui sort du soutirage
+    h_rech_out = 0
+    for i in range(0, n_sout):
+        frac = math_util.frac_mdot_sout(beta, i)
+        h_rech_out += frac*h_out[i]
+
+    # eau qui part vers le condenseur
+
+    h_rech_out += h_rech_in - frac_sout_out*h_sout_out
+    print(H2O.x(h=h_rech_out, p=p_hp_out))
+    # TODO verifier le titre de leau
+    h_chaud_in = h_rech_out + H2O.v(h=h_rech_out, p=p_hp_out)*(p_hp_in - p_hp_out)
+    ############################################################################
+
     w_p_lp = travail_pompe(p_lp_out, p_hp_out)*mdot/rend_p
 
     w_p_hp = travail_pompe(p_hp_out, p_hp_in)*mdot/rend_p
@@ -243,10 +313,10 @@ def travail(mdot, data):
 
     puissance_elec = puissance_mec*rend_alt
 
-    Q_in = (mdot*(h_hp_in - H2O.h(p=p_hp_in, x=0)) + sum(q_resurchauffe))/rend_chaud  # juste condenseur
+    Q_in = (mdot*(h_hp_in - h_chaud_in) + sum(q_resurchauffe))/rend_chaud  # juste condenseur
 
     rendement = puissance_elec / Q_in
 
     print('----')
 
-    return puissance_elec, rendement
+    return puissance_elec, rendement, eau_alim
