@@ -232,7 +232,7 @@ def travail(mdot, data):
 
     p_cond = p_lp_out
     n_sout = len(beta)
-    h_sout_out = H2O.h(x=0, p=p_lp_out)
+    h_sout_out = H2O.h(x=0, p=P_out[-1])
 
     # verifier que la temp de rejet de leau est plus basse que la temp dentree du sout
     t_sout_out = H2O.T(h=h_sout_out, p=p_cond)
@@ -267,19 +267,19 @@ def travail(mdot, data):
             h_cond_out[i] = 1
 
     titre_cond_out = np.array(H2O.x(h=h_cond_out, p=p_cond))
-
     # verfification de letat de la vapeur
-    index_mdot = len(mdot) - 1
+    index_titre_cond = len(mdot) - 1
+    vapeur_cond = False
     for i, x in enumerate(titre_cond_out):
 
         if x == -1:
             h_cond_out[i] = H2O.h(x=0, p=p_cond)
 
             titre_cond_out[i] = 0
-        if x == 1.:
-            if i <= index_mdot:
-                # TODO message d'erreur pour non condensation
-                index_mdot = i  # quand la vapeur n'est pas condense on considere que le mdot est hors requis
+        if x == 1:
+            if i <= index_titre_cond:
+                index_titre_cond = i  # quand la vapeur n'est pas condense on considere que le mdot est hors requis
+                vapeur_cond = True
             else:
                 pass
         else:
@@ -300,8 +300,25 @@ def travail(mdot, data):
     # eau qui part vers le condenseur
 
     h_rech_out += h_rech_in - frac_sout_out*h_sout_out
-    print(H2O.x(h=h_rech_out, p=p_hp_out))
-    # TODO verifier le titre de leau
+    titre_chaud_in = H2O.x(h=h_rech_out, p=p_hp_out)
+
+    # TODO ajouter une tolerance pour le titre
+    index_titre_chaud = 0
+    nb_valide = 0
+    vapeur_chaud = False
+    for k, x in enumerate(titre_chaud_in):
+        if x < 5e-3:
+            nb_valide += 1
+            if k < index_titre_chaud:
+                index_titre_chaud = k
+        else:
+            vapeur_chaud = True
+    if nb_valide == 0:
+        int_nonvap = [0, 0]
+    else:
+        int_nonvap = [index_titre_chaud, index_titre_chaud + nb_valide] # premier inclu, dernier exclu
+
+
     h_chaud_in = h_rech_out + H2O.v(h=h_rech_out, p=p_hp_out)*(p_hp_in - p_hp_out)
     ############################################################################
 
@@ -319,4 +336,4 @@ def travail(mdot, data):
 
     print('----')
 
-    return puissance_elec, rendement, eau_alim
+    return puissance_elec, rendement, eau_alim, vapeur_cond, index_titre_cond, vapeur_chaud, int_nonvap
