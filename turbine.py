@@ -145,7 +145,6 @@ def turbine_3600_int(h_in, p_in, p_out, m_dot):
     r = p_in / p_out
     A = 90.799 + 0.7474 * (np.log(r - 0.3)) - 0.5454 / (np.log(r - 0.3))
     B = -505000 + 77568 * (np.log(r + 0.8)) - 1262500 / (np.log(r + 0.8))
-    print('warn normal')
     v_in = H2O.v(h=h_in, p=p_in) * 16.0185
     V_dot = m_dot * 7936.64 * v_in * 16.0185
     eta = A + B / V_dot

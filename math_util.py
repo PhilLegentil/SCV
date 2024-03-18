@@ -10,17 +10,18 @@ def biv_poly(x, y, c):
     return somme
 
 
-def racine(coef, xg, xd):
-    fxg = np.polyval(coef, xg)
-    fxd = np.polyval(coef, xd)
+def racine(x, y, xg, xd):
+    fxg = np.interp(xg, x, y)
+    fxd = np.interp(xd, x, y)
+    tol = 1
 
     if fxg*fxd >= 0:
         r = 'pas de zero dans cet interval'
     else:
         r = (xg+xd)/2
-        while abs(xg-xd)/2 > 1e-5:
+        while abs(xg-xd)/2 > tol:
             r = (xg+xd)/2
-            fr = np.polyval(coef, r)
+            fr = np.interp(r, x, y)
             if fxg*fr < 0:
                 xd = r
             else:
@@ -30,8 +31,7 @@ def racine(coef, xg, xd):
 
 def point_optimal(x, y, low, high):
     der = np.gradient(y, x, edge_order=2)
-    coef_der = np.polyfit(x, der, 4)
-    point = racine(coef_der, low, high)
+    point = racine(x, der, low, high)
     return point
 
 
