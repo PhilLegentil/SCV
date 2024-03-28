@@ -32,7 +32,7 @@ def fig_8(TFR, PD):
         x = TFR
         y = PD
         perte = mut.biv_poly(x, y, coef)
-        return perte/100
+        return perte / 100
     else:
         x = np.array([TFR])
         y = np.full((1, len(TFR)), PD)
@@ -49,10 +49,63 @@ def fig_9(p_in, p_out, TFR):
         x = TFR
         y = np.log(r)
         perte = mut.biv_poly(x, y, coef)
-        return perte/100
+        return perte / 100
     else:
         x = np.array([TFR])
         y = np.full((1, len(TFR)), np.log(r))
+        perte = mut.biv_poly(x, y, coef)
+        return perte[0] / 100
+
+
+def fig_10(p_in, p_out, V_dot):
+    coef = np.array([[25.665, -145],
+                     [-1.33281, 7.53]])
+    r = p_out / p_in
+
+    if isinstance(V_dot, float):
+        x = r
+        y = np.log(V_dot)
+        perte = mut.biv_poly(x, y, coef)
+        return perte / 100
+    else:
+        x = np.full((1, len(V_dot)), r)
+        y = np.array([np.log(V_dot)])
+        perte = mut.biv_poly(x, y, coef)
+        return perte[0] / 100
+
+
+def fig_11(p_in, p_out, TFR):
+    coef = np.array([[0, 42.676909, -89.391147, 9.0376638],
+                     [0, -26.221836, 25.549385, 8.8283868],
+                     [0, 4.0479550, -1.4725197, -4.0183332],
+                     [0, -0.14502211, -0.18580363, 0.42657518]])
+    r = p_in / p_out
+
+    if isinstance(TFR, float):
+        x = 1 - TFR
+        y = r
+        perte = mut.biv_poly(x, y, coef)
+        return perte / 100
+    else:
+        x = np.array([1 - TFR])
+        y = np.full((1, len(TFR)), r)
+        perte = mut.biv_poly(x, y, coef)
+        return perte[0] / 100
+
+
+def fig_12(TFR, NV):
+    coef = np.array([[-5.4, 4.395],
+                     [0.45, -0.36625],
+                     ])
+
+    if isinstance(TFR, float):
+        x = TFR
+        y = NV
+        perte = mut.biv_poly(x, y, coef)
+        return perte / 100
+    else:
+        x = np.array([TFR])
+        y = np.full((1, len(TFR)), NV)
         perte = mut.biv_poly(x, y, coef)
         return perte[0] / 100
 
@@ -80,7 +133,7 @@ def table_3(l_aube, pitch_dia, p_out, m_dot):
     l_aube = l_aube / 25.4
     v_in = H2O.v(x=1, p=p_out)
     V_dot = m_dot * 2.204 * v_in * 16.0185
-    A_an = A_an * 1.076e-5
+    A_an = A_an * 1.07639e-5  # mm a sqft
     V_an = V_dot / A_an
     x = np.array([35, 38, 43, 52])
     y = np.array(
@@ -113,7 +166,6 @@ def table_3(l_aube, pitch_dia, p_out, m_dot):
 
 
 def turbine_3600_HP(mdot_design, mdot_in, gv_stage, h_in, p_in, p_out, pitch_dia):
-
     TFR = mdot_in / mdot_design
 
     v_in = H2O.v(h=h_in, p=p_in) * 16.0185  # conversion
@@ -134,9 +186,13 @@ def turbine_3600_HP(mdot_design, mdot_in, gv_stage, h_in, p_in, p_out, pitch_dia
         perte_9 = fig_9(p_in, p_out, TFR)
         eta = eta * (1 + perte_9)
 
-    # TODO : ajouter pour gv = 2
     if gv_stage == 2:
         eta = .84
+        V_dot = mdot_in_lb * v_in
+        cr_vol = 1005200 / (V_dot * 100)
+        eta = eta * (1 - cr_vol)
+        eta = eta * (1 + fig_10(p_in, p_out, V_dot))
+        eta = eta * (1 + fig_11(p_in, p_out, TFR))
 
     return eta
 

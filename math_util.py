@@ -16,7 +16,7 @@ def racine(x, y, xg, xd):
     tol = 1
 
     if fxg*fxd >= 0:
-        r = 'pas de zero dans cet interval'
+        r = "Optimisation: Pas de zéro trouvé dans l'interval donné"
     else:
         r = (xg+xd)/2
         while abs(xg-xd)/2 > tol:

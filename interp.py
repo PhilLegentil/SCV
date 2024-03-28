@@ -26,7 +26,7 @@ try:
 
     file_path = "../interface.xlsm"
     data = pd.read_excel(file_path, header=0, sheet_name=titre)
-    x = data['interp'][0]
+    x = data['Interpolation'][0]
 
     valeur = np.interp(x, W_net, rendement)
 
@@ -34,9 +34,9 @@ try:
     ExcelApp.Visible = True
 
     workbook = ExcelApp.Workbooks.Open(r"../interface.xlsm")
-    sheet = workbook.Worksheets(2)
+    sheet = workbook.Worksheets(titre)
 
-    sheet.Range("X3").Value = valeur
+    sheet.Range("E3").Value = round(valeur,4)
 
     os.chdir('C:/Users/Phil')
 
