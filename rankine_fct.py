@@ -1,7 +1,7 @@
 import pyromat as pm
 import numpy as np
 import math
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import pyfluids as pf
 
 import math_util
@@ -344,7 +344,7 @@ def travail(mdot, data, BD):
                 if resurchauffe[i] < T:
                     T_in[j] = T
                     raise Resurchauffe(
-                        f"La température de resurchauffe pour la turbine LP est plus basse "
+                        f"La température de resurchauffe pour l'étage intermédiaire {i+1} est plus basse "
                         f"que la température de sortie")
                 else:
                     T_in[j] = resurchauffe[i]

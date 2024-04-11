@@ -7,7 +7,7 @@ import traceback
 import os
 from rankine_fct import *
 import win32com.client
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import fexcel
@@ -306,3 +306,8 @@ finally:
     sheet.Range("A:AA").Locked = True
     sheet.Range("E2:E3").Locked = False
     sheet.Protect()
+
+sheet.Cells.Locked = False
+sheet.Range("A:AA").Locked = True
+sheet.Range("E2:E3").Locked = False
+sheet.Protect()
